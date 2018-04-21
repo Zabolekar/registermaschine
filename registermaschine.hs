@@ -1,7 +1,8 @@
 import Data.Sequence as DS
 import Data.Foldable
+import Numeric.Natural
 
-maxSteps = Just 100 -- Nothing if you want to allow infinite loops
+maxSteps = Fin 100 -- Inf if you want to allow infinite loops
 
 main = do
    print $ run adder [1,5,7] -- [0,0,13]
@@ -29,6 +30,12 @@ subtractor = Start a where
 
 -- Implementation
 
+data CoNat = Fin !Natural | Inf deriving (Eq, Ord, Show)
+
+prec :: CoNat -> Maybe CoNat
+prec (Fin n) = if n == 0 then Nothing else Just $ Fin $ n-1
+prec Inf = Just Inf
+
 data Result = Bottom | Memory [Int]
 
 instance Show Result where
@@ -41,6 +48,7 @@ data Op = Inc Int Op
         | Dec Int Op
         | Jeqz Int Op Op
         | Halt
+   deriving Eq
 
 growingUpdate :: Int -> Int -> Seq Int -> Seq Int
 growingUpdate i val x =
@@ -56,24 +64,24 @@ growingUpdate i val x =
       else index x i
 
 run :: Machine -> [Int] -> Result
-run (Start op) memory = eval op 0 $ fromList memory
+run (Start op) memory = eval op maxSteps $ fromList memory
 
-eval :: Op -> Int -> Seq Int -> Result
+eval :: Op -> CoNat -> Seq Int -> Result
 eval op steps memory = 
-   let bottom = case maxSteps of
-         Nothing -> False
-         Just number -> steps > number
-   in
-   if bottom then Bottom else
-      let n = steps+1 in
-      case op of
-         Inc register next ->
-            eval next n $ growingUpdate register val memory
-               where val = memory !? register + 1
-         Dec register next ->
-            eval next n $ growingUpdate register val memory
-               where val = max 0 $ memory !? register - 1
-         Jeqz register ifZero ifNonZero ->
-            eval next n memory
-               where next = if memory !? register == 0 then ifZero else ifNonZero
-         Halt -> Memory $ toList memory
+   case prec steps of
+      Nothing -> if op == Halt then halt else Bottom
+      Just stepsLeft -> resume stepsLeft
+   where
+      resume s =
+         case op of
+            Inc register next ->
+               eval next s $ growingUpdate register val memory
+                  where val = memory !? register + 1
+            Dec register next ->
+               eval next s $ growingUpdate register val memory
+                  where val = max 0 $ memory !? register - 1
+            Jeqz register ifZero ifNonZero ->
+               eval next s memory
+                  where next = if memory !? register == 0 then ifZero else ifNonZero
+            Halt -> halt
+      halt = Memory $ toList memory
