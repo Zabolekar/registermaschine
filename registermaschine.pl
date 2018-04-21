@@ -1,26 +1,38 @@
+checkMaxSteps(N) :- N < 100.
+% remove the goal to allow infinite loops
+% change the number to change the maximum number of steps
+
 nth(_, [], 0). % if N is out of bounds
 nth(0, [H|_], H) :- !.
-nth(N, [_|T], M) :- N1 is N-1, nth(N1, T, M).
+nth(R, [_|T], M) :- R1 is R-1, nth(R1, T, M).
 
-update(N, X, [], [H|T]) :- update(N, X, [0], [H|T]), !. % if N is out of bounds
-update(0, X, [_|T], [X|T]) :- !.
-update(N, X, [H|T], [H|T1]) :- N1 is N-1, update(N1, X, T, T1).
+update(R, N, [], [H|T]) :- update(R, N, [0], [H|T]), !. % if N is out of bounds
+update(0, N, [_|T], [N|T]) :- !.
+update(R, N, [H|T], [H|T1]) :- R1 is R-1, update(R1, N, T, T1).
 
-eval(halt, Memory, Memory).
-eval(inc(R, Op), MemoryBefore, MemoryAfter) :-
+eval(Op, MemoryBefore, MemoryAfter) :- eval(Op, MemoryBefore, MemoryAfter, 0).
+
+eval(halt, Memory, Memory, _).
+eval(inc(R, Op), MemoryBefore, MemoryAfter, NSteps) :-
+   checkMaxSteps(NSteps),
+   NStepsNext is NSteps + 1,
    nth(R, MemoryBefore, M),
    N is M+1,
    update(R, N, MemoryBefore, MemoryUpdated),
-   eval(Op, MemoryUpdated, MemoryAfter).
-eval(dec(R, Op), MemoryBefore, MemoryAfter) :-
+   eval(Op, MemoryUpdated, MemoryAfter, NStepsNext).
+eval(dec(R, Op), MemoryBefore, MemoryAfter, NSteps) :-
+   checkMaxSteps(NSteps),
+   NStepsNext is NSteps + 1,
    nth(R, MemoryBefore, M),
-   (N is M-1, N >= 0, !; N is 0),
+   (N is M-1, N >= 0, !; N = 0),
    update(R, N, MemoryBefore, Memory),
-   eval(Op, Memory, MemoryAfter).
-eval(jeqz(R, IfZero, IfNotZero), MemoryBefore, MemoryAfter) :-
+   eval(Op, Memory, MemoryAfter, NStepsNext).
+eval(jeqz(R, IfZero, IfNotZero), MemoryBefore, MemoryAfter, NSteps) :-
+   checkMaxSteps(NSteps),
+   NStepsNext is NSteps + 1,
    nth(R, MemoryBefore, M),
-   (M is 0, eval(IfZero, MemoryBefore, MemoryAfter), !;
-   eval(IfNotZero, MemoryBefore, MemoryAfter)).
+   (M = 0, !, eval(IfZero, MemoryBefore, MemoryAfter, NStepsNext);
+   eval(IfNotZero, MemoryBefore, MemoryAfter, NStepsNext)).
 
 adder(MemoryBefore, MemoryAfter) :-
    A = jeqz(0, D, B),
@@ -43,6 +55,6 @@ subtractor(MemoryBefore, MemoryAfter) :-
    H = halt,
    eval(A, MemoryBefore, MemoryAfter).
 
-:- adder([1,5,7], X), print(X), nl,
-   subtractor([8,3], Y), print(Y), nl,
-   !.
+:- (adder([1,5,7], X), print(X); print(bottom)), nl. % [0,0,13]
+:- (subtractor([8,3], Y), print(Y); print(bottom)), nl. % [0,0,5]
+:- (subtractor([3,8], Z), print(Z); print(bottom)), nl. % bottom
