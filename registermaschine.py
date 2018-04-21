@@ -1,8 +1,6 @@
 from collections import defaultdict
 
-MAX_STEPS = 100
-# set to None or 0 if you don't want to restrict the number of steps
-# but beware, in this case your program might run forever
+MAX_STEPS = 100 # set to None to allow infinite loops
 
 adder = dict(a = ('jeqz', 0, 'd', 'b'),
              b = ('dec', 0, 'c'),
@@ -46,7 +44,7 @@ def run(machine, initial_state):
 
       steps += 1
 
-      if MAX_STEPS and steps >= MAX_STEPS:
+      if MAX_STEPS is not None and steps >= MAX_STEPS:
          # The flow diagram did not halt for given input after max_steps steps
          return "Bottom"
 

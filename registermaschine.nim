@@ -1,7 +1,13 @@
 import options
 import macros
 
-const maxSteps = 100
+const maxSteps = some(100) # set to none(int) to allow infinite loops
+
+proc notTooMuch(steps: int): bool {.inline.} = 
+   when maxSteps.isNone:
+      true
+   else:
+      steps <= maxSteps.get
 
 template defOp(opName, kind: untyped): untyped =
    varSec.add(newIdentDefs(opName,
@@ -86,7 +92,7 @@ proc run(machine: Machine, initial_state: seq[int]): Results =
       memory = initial_state
       i = 0
 
-   while steps <= maxSteps:
+   while steps.notTooMuch:
 
       case op.kind:
          of inc:

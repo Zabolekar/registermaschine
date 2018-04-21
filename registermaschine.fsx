@@ -1,6 +1,6 @@
 #nowarn "40"
 
-let maxSteps = 100
+let maxSteps = Some 100 //set to None to allow infinite loops
 
 type Result = Bottom | Memory of int array
 
@@ -32,7 +32,12 @@ let subtractor =
    in a
 
 let rec eval op steps (memory : int array ref) =
-   if steps > maxSteps then Bottom
+   let bottom = begin
+      match maxSteps with
+      | None -> false
+      | Some number -> steps > number
+   end
+   if bottom then Bottom
    else
       let grow N = (* grow memory array if needed *)
          let n = (!memory).Length

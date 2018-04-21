@@ -1,6 +1,6 @@
 (require '[clojure.core.match :refer [match]])
 
-(def max-steps 100)
+(def max-steps 100) ; set to nil or false to allow infinite loops
 
 (def adder
   {:a [:jeqz 0 :d :b]
@@ -23,11 +23,17 @@
    :h :halt
    :start :a})
 
+(defn hash-map->seq [m]
+  (->> (keys m) (apply max) inc range (map #(m % 0))))
+
+(defn seq->hash-map [v]
+  (zipmap (range) v))
+
 (defn run [machine memory]
   (loop [node (machine (machine :start))
          memory (seq->hash-map memory)
          steps 0]
-    (if (> steps max-steps)
+    (if (and max-steps (> steps max-steps))
       :bottom
       (match node
              :halt (hash-map->seq memory)
@@ -46,13 +52,6 @@
                                                     memory
                                                     (inc steps)))))))
 
-(defn hash-map->seq [m]
-  (->> (keys m) (apply max) inc range (map #(m % 0))))
-
-(defn seq->hash-map [v]
-  (zipmap (range) v))
-
-(println
- (run adder [1 5 7]) ; (0 0 13)
- (run subtractor [8 3]) ; (0 0 5)
- (run subtractor [3 8])) ; :bottom
+(println (run adder [1 5 7])) ; (0 0 13)
+(println (run subtractor [8 3])) ; (0 0 5)
+(println (run subtractor [3 8])) ; :bottom
