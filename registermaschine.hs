@@ -69,7 +69,7 @@ run (Start op) memory = eval op maxSteps $ fromList memory
 eval :: Op -> CoNat -> Seq Int -> Result
 eval op steps memory = 
    case prec steps of
-      Nothing -> if op == Halt then halt else Bottom
+      Nothing -> Bottom
       Just stepsLeft -> resume stepsLeft
    where
       resume s =
@@ -83,5 +83,4 @@ eval op steps memory =
             Jeqz register ifZero ifNonZero ->
                eval next s memory
                   where next = if memory !? register == 0 then ifZero else ifNonZero
-            Halt -> halt
-      halt = Memory $ toList memory
+            Halt -> Memory $ toList memory
