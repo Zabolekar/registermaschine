@@ -1,0 +1,6 @@
+registermaschine.exe
+registermaschine.hi
+registermaschine.o
+__pycache__
+nimcache
+.vscode
