@@ -1,0 +1,69 @@
+\documentclass[border=5pt, tikz]{standalone}
+\usepackage{tikz}
+\usepackage{mnsymbol}
+\usetikzlibrary{shapes, arrows}
+\begin{document}
+\pagestyle{empty}
+
+\tikzstyle{decision} = [diamond, draw, aspect=2]
+\tikzstyle{empty} = [rectangle, minimum height=2em]
+\tikzstyle{block} = [rectangle, draw, minimum height=2em]
+\tikzstyle{line} = [draw, -latex']
+
+\begin{tikzpicture}[node distance=40mm]
+\node[empty] (start) {START};
+\node[decision, label=above left:A, below of=start] (a) {$R_0 = 0$};
+\node[block, label=above left:C, above right of=a] (c) {$R_2 := R_2 + 1$};
+\node[block, label=above left:B, below of=c] (b) {$R_0 := R_0\dotminus 1$};
+\node[decision, label=above left:D, below of=a] (d) {$R_1 = 0$};
+\node[block, label=above left:E, below left of=d] (e) {$R_1 := R_1\dotminus 1$};
+\node[block, label=above left:F, above of=e] (f) {$R_2 := R_2 + 1$};
+\node[block, label=above left:G, below of=d] (g) {HALT};
+\path[line] (start) -- (a);
+\path[line] (a) -- node [near start, left] {$+$} (d);
+\path[line] (a) -- node [near start, below] {$-$} (b);
+\path[line] (b) -- (c);
+\path[line] (c) -- (a);
+\path[line] (d) -- node [near start, left] {$+$} (g);
+\path[line] (d) -- node [near start, above] {$-$} (e);
+\path[line] (e) -- (f);
+\path[line] (f) -- (d);
+\end{tikzpicture}
+
+\newpage
+
+\begin{tikzpicture}[node distance=40mm]
+\node[empty] (start) {START};
+\node[decision, label=above left:A, below of=start] (a) {$R_1 = 0$};
+\node[decision, label=above left:B, above right of=a] (b) {$R_0 = 0$};
+\node[block, label=above left:C, below of=b] (c) {$R_0 := R_0\dotminus 1$};
+\node[block, label=above left:D, below of=c] (d) {$R_1 := R_1\dotminus 1$};
+\node[decision, label=above right:E, below of=a] (e) {$R_0 = 0$};
+\node[block, label=above left:F, above left of=e] (f) {$R_0 := R_0\dotminus 1$};
+\node[block, label=above left:G, below of=f] (g) {$R_2 := R_2 + 1$};
+\node[block, label=above left:H, below of=e] (h) {HALT};
+\path[line] (start) -- (a);
+\path[line] (a) -- node [near start, left] {$+$} (e);
+\path[line] (a) -- node [near start, below] {$-$} (b);
+\draw[-] (b) to [out=90,in=180,loop,looseness=4] node [near start, above] {$+$} (b);
+\path[line] (b) -- node [near start, left] {$-$} (c);
+\path[line] (c) -- (d);
+\path[line] (d) -- (a);
+\path[line] (e) -- node [near start, left] {$+$} (h);
+\path[line] (e) -- node [near start, below] {$-$} (f);
+\path[line] (f) -- (g);
+\path[line] (g) -- (e);
+\end{tikzpicture}
+
+%machine subtractor:
+%   a = jeqz 1 e b
+%   b = jeqz 0 b c
+%   c = dec 0 d
+%   d = dec 1 a
+%   e = jeqz 0 h f
+%   f = dec 0 g
+%   g = inc 2 e
+%   h = halt
+%   start = a
+
+\end{document}

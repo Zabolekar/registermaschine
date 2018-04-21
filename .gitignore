@@ -1,6 +1,9 @@
 registermaschine.exe
 registermaschine.hi
 registermaschine.o
+flussdiagramm.aux
+flussdiagramm.log
+flussdiagramm.pdf
 __pycache__
 nimcache
 .vscode
