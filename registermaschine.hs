@@ -1,7 +1,7 @@
 import Data.Sequence as DS
 import Data.Foldable
 
-maxSteps = 100
+maxSteps = Just 100 -- Nothing if you want to allow infinite loops
 
 main = do
    print $ run adder [1,5,7] -- [0,0,13]
@@ -60,7 +60,11 @@ run (Start op) memory = eval op 0 $ fromList memory
 
 eval :: Op -> Int -> Seq Int -> Result
 eval op steps memory = 
-   if steps > maxSteps then Bottom else
+   let bottom = case maxSteps of
+         Nothing -> False
+         Just number -> steps > number
+   in
+   if bottom then Bottom else
       let n = steps+1 in
       case op of
          Inc register next ->
