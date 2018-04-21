@@ -1,6 +1,53 @@
 import options
+import macros
 
 const maxSteps = 100
+
+template defOp(opName, kind: untyped): untyped =
+   varSec.add(newIdentDefs(opName,
+                           newEmptyNode(),
+                           newNimNode(nnkObjConstr)
+                           .add(ident("Op"))
+                           .add(newColonExpr(ident("kind"), kind))))
+
+template assignment(a: string, b: untyped): untyped =
+   myBlock.add(newAssignment(newDotExpr(opname, ident(a)), b))
+
+macro machine(name: untyped, body: untyped): untyped =
+
+   var myBlock: NimNode = newNimNode(nnkStmtList)
+   var varSec: NimNode = newNimNode(nnkVarSection)
+   myBlock.add(varSec)
+
+   for line in body:
+      if $line[0] == "start":
+         myBlock.add(newAssignment(newDotExpr(name, ident("start")), line[1]))
+      else:
+         var
+            opname = line[0]
+            op = line[1]
+         if op == ident("halt"):
+            defOp(opName, op)
+         else:
+            var
+               kind = op[0]
+               rest = op[1]
+            defOp(opName, kind)
+            case $kind:
+               of "inc", "dec":
+                  varSec[^1][2].add(newColonExpr(ident("valueRegister"), rest[0]))
+                  assignment("next", rest[1])
+               of "jeqz":
+                  varSec[^1][2].add(newColonExpr(ident("conditionRegister"), rest[0]))
+                  assignment("ifZero", rest[1][0]) 
+                  assignment("ifNotZero", rest[1][1])
+               else:
+                  error("unknown kind: " & $kind)
+
+   result = quote do:
+      var `name`: Machine
+      block:
+         `myBlock`
 
 type
    OpKind = enum jeqz, inc, dec, halt
@@ -17,53 +64,6 @@ type
          nil
    Machine = object
       start: Op
-
-var adder: Machine
-block:
-   var
-      a = Op(kind: jeqz, conditionRegister: 0)
-      b = Op(kind: dec, valueRegister: 0)
-      c = Op(kind: inc, valueRegister: 2)
-      d = Op(kind: jeqz, conditionRegister: 1)
-      e = Op(kind: dec, valueRegister: 1)
-      f = Op(kind: inc, valueRegister: 2)
-      g = Op(kind: halt)
-   
-   a.ifZero = d
-   a.ifNotZero = b
-   b.next = c
-   c.next = a
-   d.ifZero = g
-   d.ifNotZero = e
-   e.next = f
-   f.next = d
-
-   adder.start = a
-
-var subtractor: Machine
-block:
-   var
-      a = Op(kind: jeqz, conditionRegister: 1)
-      b = Op(kind: jeqz, conditionRegister: 0)
-      c = Op(kind: dec, valueRegister: 0)
-      d = Op(kind: dec, valueRegister: 1)
-      e = Op(kind: jeqz, conditionRegister: 0)
-      f = Op(kind: dec, valueRegister: 0)
-      g = Op(kind: inc, valueRegister: 2)
-      h = Op(kind: halt)
-
-   a.ifZero = e
-   a.ifNotZero = b
-   b.ifZero = b
-   b.ifNotZero = c
-   c.next = d
-   d.next = a
-   e.ifZero = h
-   e.ifNotZero = f
-   f.next = g
-   g.next = e
-
-   subtractor.start = a
 
 type Results = distinct Option[seq[int]]
 
@@ -88,28 +88,50 @@ proc run(machine: Machine, initial_state: seq[int]): Results =
 
    while steps <= maxSteps:
 
-      if op.kind == inc:
-         i = op.valueRegister
-         grow(memory, i)
-         memory[i] += 1
-         op = op.next
-      elif op.kind == dec:
-         i = op.valueRegister
-         grow(memory, i)
-         memory[i] -= 1
-         if memory[i] < 0:
-            memory[i] = 0
-         op = op.next
-      elif op.kind == jeqz:
-         i = op.conditionRegister
-         grow(memory, i)
-         op = if memory[i] == 0: op.ifZero else: op.ifNotZero
-      elif op.kind == halt:
-         return Results(some(memory))
+      case op.kind:
+         of inc:
+            i = op.valueRegister
+            grow(memory, i)
+            memory[i] += 1
+            op = op.next
+         of dec:
+            i = op.valueRegister
+            grow(memory, i)
+            memory[i] -= 1
+            if memory[i] < 0:
+               memory[i] = 0
+            op = op.next
+         of jeqz:
+            i = op.conditionRegister
+            grow(memory, i)
+            op = if memory[i] == 0: op.ifZero else: op.ifNotZero
+         of halt:
+            return Results(some(memory))
 
       steps += 1
 
    return Results(none(seq[int]))
+
+machine adder:
+   a = jeqz 0 d b
+   b = dec 0 c
+   c = inc 2 a
+   d = jeqz 1 g e
+   e = dec 1 f
+   f = inc 2 d
+   g = halt
+   start = a
+
+machine subtractor:
+   a = jeqz 1 e b
+   b = jeqz 0 b c
+   c = dec 0 d
+   d = dec 1 a
+   e = jeqz 0 h f
+   f = dec 0 g
+   g = inc 2 e
+   h = halt
+   start = a
 
 echo run(adder, @[1,5,7]) # @[0,0,13]
 echo run(subtractor, @[8,3]) # @[0,0,5]
