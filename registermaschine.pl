@@ -8,30 +8,41 @@ update(N, X, [H|T], [H|T1]) :- N1 is N-1, update(N1, X, T, T1).
 
 eval(halt, Memory, Memory).
 eval(inc(R, Op), MemoryBefore, MemoryAfter) :-
-    nth(R, MemoryBefore, M),
-    N is M+1,
-    update(R, N, MemoryBefore, MemoryUpdated),
-    eval(Op, MemoryUpdated, MemoryAfter).
+   nth(R, MemoryBefore, M),
+   N is M+1,
+   update(R, N, MemoryBefore, MemoryUpdated),
+   eval(Op, MemoryUpdated, MemoryAfter).
 eval(dec(R, Op), MemoryBefore, MemoryAfter) :-
-    nth(R, MemoryBefore, M),
-    (N is M-1, N >= 0, !; N is 0),
-    update(R, N, MemoryBefore, Memory),
-    eval(Op, Memory, MemoryAfter).
+   nth(R, MemoryBefore, M),
+   (N is M-1, N >= 0, !; N is 0),
+   update(R, N, MemoryBefore, Memory),
+   eval(Op, Memory, MemoryAfter).
 eval(jeqz(R, IfZero, IfNotZero), MemoryBefore, MemoryAfter) :-
-    nth(R, MemoryBefore, M),
-    (M is 0, eval(IfZero, MemoryBefore, MemoryAfter), !;
-     eval(IfNotZero, MemoryBefore, MemoryAfter)).
+   nth(R, MemoryBefore, M),
+   (M is 0, eval(IfZero, MemoryBefore, MemoryAfter), !;
+   eval(IfNotZero, MemoryBefore, MemoryAfter)).
 
 adder(MemoryBefore, MemoryAfter) :-
-    A = jeqz(0, D, B),
-    B = dec(0, C),
-    C = inc(2, A),
-    D = jeqz(1, G, E),
-    E = dec(1, F),
-    F = inc(2, D),
-    G = halt,
-    eval(A, MemoryBefore, MemoryAfter).
+   A = jeqz(0, D, B),
+   B = dec(0, C),
+   C = inc(2, A),
+   D = jeqz(1, G, E),
+   E = dec(1, F),
+   F = inc(2, D),
+   G = halt,
+   eval(A, MemoryBefore, MemoryAfter).
+    
+subtractor(MemoryBefore, MemoryAfter) :-
+   A = jeqz(1, E, B),
+   B = jeqz(0, B, C),
+   C = dec(0, D),
+   D = dec(1, A),
+   E = jeqz(0, H, F),
+   F = dec(0, G),
+   G = inc(2, E),
+   H = halt,
+   eval(A, MemoryBefore, MemoryAfter).
 
-%adder([1,5,7], X).
-%X = [0,0,13] ? ;
-%no
+:- adder([1,5,7], X), print(X), nl,
+   subtractor([8,3], Y), print(Y), nl,
+   !.
