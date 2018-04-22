@@ -1,6 +1,8 @@
-import Data.Sequence as DS
 import Data.Foldable
 import Numeric.Natural
+import Data.IntMap.Strict (IntMap)
+import qualified Data.IntMap.Strict as M
+import Data.Maybe (fromMaybe)
 
 maxSteps = Fin 100 -- Inf if you want to allow infinite loops
 
@@ -50,23 +52,19 @@ data Op = Inc Int Op
         | Halt
    deriving Eq
 
-growingUpdate :: Int -> Int -> Seq Int -> Seq Int
-growingUpdate i val x =
-   if DS.length x - 1 < i
-      then growingUpdate i val (x |> 0)
-      else update i val x
+(!?) :: IntMap Int -> Int -> Int
+(!?) m k = M.findWithDefault 0 k m
 
--- growing index
-(!?) :: Seq Int -> Int -> Int
-(!?) x i =
-   if DS.length x - 1 < i
-      then (x |> 0) !? i
-      else index x i
+toFullList :: IntMap Int -> [Int]
+toFullList m = [ m !? k | k <- [0..maxKey] ]
+   where maxKey = maybe (-1) fst $ M.lookupMax m
 
 run :: Machine -> [Int] -> Result
-run (Start op) memory = eval op maxSteps $ fromList memory
+run (Start op) memory = eval op maxSteps memoryMap
+   where
+      memoryMap = M.fromDistinctAscList $ zip [0..] memory
 
-eval :: Op -> CoNat -> Seq Int -> Result
+eval :: Op -> CoNat -> IntMap Int -> Result
 eval op steps memory = 
    case prec steps of
       Nothing -> Bottom
@@ -75,12 +73,13 @@ eval op steps memory =
       resume s =
          case op of
             Inc register next ->
-               eval next s $ growingUpdate register val memory
-                  where val = memory !? register + 1
+               eval next s $ M.alter safeInc register memory
             Dec register next ->
-               eval next s $ growingUpdate register val memory
-                  where val = max 0 $ memory !? register - 1
+               eval next s $ M.alter safeDec register memory
             Jeqz register ifZero ifNonZero ->
                eval next s memory
-                  where next = if memory !? register == 0 then ifZero else ifNonZero
-            Halt -> Memory $ toList memory
+                  where next = if isZero register then ifZero else ifNonZero
+            Halt -> Memory $ toFullList memory
+      safeInc = Just . (+ 1) . fromMaybe 0
+      safeDec = Just . max 0 . subtract 1 . fromMaybe 0
+      isZero register = memory !? register == 0
