@@ -9,7 +9,7 @@ This repository contains code in multiple programming languages for defining and
 
 I consider implementations in the following languages to be complete (although not necessarily finished, as some don't look very idiomatic):
 
-- Ceylon (due to [arseniiv](https://github.com/arseniiv))
+- Ceylon (thanks to [arseniiv](https://github.com/arseniiv))
 - Clojure
 - Common Lisp (thanks to Stanislav K. for reviewing the code and making it more portable)
 - F#
