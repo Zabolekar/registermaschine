@@ -11,8 +11,8 @@ shared interface Machine {
         variable value op = start;
         while (exists newSteps = steps.prec) {
             if (exists newOp = op.evalStep(mapMemory)) {
-            	steps = newSteps;
-            	op = newOp;                
+                steps = newSteps;
+            	   op = newOp;                
                 continue;
             }
             value registerCount = (mapMemory.last?.key else -1) + 1;
