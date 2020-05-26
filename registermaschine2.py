@@ -100,7 +100,6 @@ PartialResult = Tuple[State, MemorySnapshot]
 def run_trace(machine: Machine,
               initial: Iterable[Nat]) -> Iterator[PartialResult]:
     memory = defaultdict(Nat.zero, enumerate(initial))
-    state: State
     state, transitions = machine
     while True:
         yield state, memory_snapshot(memory)
