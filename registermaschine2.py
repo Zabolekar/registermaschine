@@ -139,3 +139,7 @@ if __name__ == '__main__':
     print(run(adder, map(Nat, (1, 5, 7)), L.INF)) # (0, 0, 13)
     print(run(subtractor, map(Nat, (8, 3)), L.INF)) # (0, 0, 5)
     print(run(subtractor, map(Nat, (3, 8)), Nat(100))) # L.NOT_DONE
+
+    print('Trace for `adder`:')
+    for track in run_trace(adder, map(Nat, (1, 5, 7))):
+        print(' ' * 4, *track)
