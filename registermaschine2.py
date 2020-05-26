@@ -4,7 +4,7 @@
 """
 
 from __future__ import annotations
-from typing import Optional, Tuple, Mapping, Dict, Iterable, Union, Literal, Generator
+from typing import Optional, Tuple, Mapping, Dict, Iterable, Union, Literal, Iterator
 from collections import defaultdict
 from dataclasses import dataclass
 from abc import ABC, abstractmethod
@@ -34,39 +34,44 @@ class Nat(int):
 
 StepCount = Union[Nat, Literal[L.INF]]
 
-def dec_steps(steps: StepCount) -> Optional[StepCount]:
-    if steps is L.INF:
-        return steps
+def dec_step_count(count: StepCount) -> Optional[StepCount]:
+    if count is L.INF:
+        return count
     try:
-        return Nat(steps - 1)
+        return Nat(count - 1)
     except ValueError:
         return None
 
+def steps(count: StepCount) -> Iterator[None]:
+    while (left := dec_step_count(count)) is not None:
+        count = left
+        yield None
+
 Reg = int # `Nat` can be out of bounds too, and we could check machines before running anyway
 Memory = Dict[Reg, Nat]
-State = str
-NextState = Union[State, Literal[L.HALT]]
+UserState = str
+State = Union[UserState, Literal[L.HALT]]
 
 class Cmd(ABC):
     @abstractmethod
-    def perform(self, memory: Memory) -> NextState:
+    def perform(self, memory: Memory) -> State:
         raise NotImplementedError
 
 @dataclass
 class Inc(Cmd):
     reg: Reg
-    next: NextState
+    next: State
 
-    def perform(self, memory: Memory) -> NextState:
+    def perform(self, memory: Memory) -> State:
         memory[self.reg] += 1
         return self.next
 
 @dataclass
 class Dec(Cmd):
     reg: Reg
-    next: NextState
+    next: State
 
-    def perform(self, memory: Memory) -> NextState:
+    def perform(self, memory: Memory) -> State:
         try:
             memory[self.reg] -= 1
         except ValueError:
@@ -76,10 +81,10 @@ class Dec(Cmd):
 @dataclass
 class Jeqz(Cmd):
     reg: Reg
-    next_if_zero: NextState
-    next_if_pos: NextState
+    next_if_zero: State
+    next_if_pos: State
 
-    def perform(self, memory: Memory) -> NextState:
+    def perform(self, memory: Memory) -> State:
         if memory[self.reg]:
             return self.next_if_pos
         return self.next_if_zero
@@ -89,31 +94,27 @@ MemorySnapshot = Tuple[Nat, ...]
 def memory_snapshot(memory: Memory) -> MemorySnapshot:
     return tuple(memory[k] for k in range(max(memory) + 1))
 
-Machine = Tuple[State, Mapping[State, Cmd]]
-PartialResult = Tuple[MemorySnapshot, NextState]
+Machine = Tuple[State, Mapping[UserState, Cmd]]
+PartialResult = Tuple[State, MemorySnapshot]
+
+def run_trace(machine: Machine,
+              initial: Iterable[Nat]) -> Iterator[PartialResult]:
+    memory = defaultdict(Nat.zero, enumerate(initial))
+    state: State
+    state, transitions = machine
+    while True:
+        yield state, memory_snapshot(memory)
+        if state is L.HALT:
+            break
+        state = transitions[state].perform(memory)
+
 Result = Union[MemorySnapshot, Literal[L.NOT_DONE]]
 
-def run_gen(machine: Machine,
-            initial: Iterable[Nat],
-            steps: StepCount) -> Generator[PartialResult, None, Result]:
-    memory = defaultdict(Nat.zero, enumerate(initial))
-    state: NextState
-    state, transitions = machine
-    while state is not L.HALT:
-        if (steps_ := dec_steps(steps)) is None:
-            return L.NOT_DONE
-        steps = steps_
-        state = transitions[state].perform(memory)
-        yield memory_snapshot(memory), state
-    return memory_snapshot(memory)
-
-def run(machine: Machine, initial: Iterable[Nat], steps: StepCount) -> Result:
-    try:
-        gen = run_gen(machine, initial, steps)
-        while True:
-            next(gen)
-    except StopIteration as finished:
-        return finished.value
+def run(machine: Machine, initial: Iterable[Nat], count: StepCount) -> Result:
+    for (state, snapshot), _ in zip(run_trace(machine, initial), steps(count)):
+        if state is L.HALT:
+            return snapshot
+    return L.NOT_DONE
 
 adder: Machine = ('a', {
     'a': Jeqz(0, 'd', 'b'),
@@ -134,10 +135,7 @@ subtractor: Machine = ('a', {
     'g': Inc(2, 'e'),
 })
 
-def main() -> None:
+if __name__ == '__main__':
     print(run(adder, map(Nat, (1, 5, 7)), L.INF)) # (0, 0, 13)
     print(run(subtractor, map(Nat, (8, 3)), L.INF)) # (0, 0, 5)
     print(run(subtractor, map(Nat, (3, 8)), Nat(100))) # L.NOT_DONE
-
-if __name__ == '__main__':
-    main()
