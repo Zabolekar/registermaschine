@@ -48,7 +48,10 @@ def run(machine, initial_state):
          # The flow diagram did not halt for given input after max_steps steps
          return "Bottom"
 
-   return [memory[k] for k in range(max(memory)+1)]
+   if memory:
+      return [memory[k] for k in range(max(memory)+1)]
+   else:
+      return [] # to handle special cases like run(dict(start='halt'), [])
 
 if __name__ == "__main__":
    print(run(adder, [1,5,7])) # [0,0,13]
