@@ -67,7 +67,10 @@ class Dec(Cmd):
     next: NextState
 
     def perform(self, memory: Memory) -> NextState:
-        memory[self.reg] -= 1
+        try:
+            memory[self.reg] -= 1
+        except ValueError:
+            memory[self.reg] = Nat.zero()
         return self.next
 
 @dataclass
