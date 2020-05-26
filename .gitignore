@@ -5,6 +5,7 @@ flussdiagramm.aux
 flussdiagramm.log
 flussdiagramm.pdf
 __pycache__
+.mypy_cache
 nimcache
 .vscode
 registermaschine.pdb
