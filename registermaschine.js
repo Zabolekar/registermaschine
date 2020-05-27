@@ -37,7 +37,7 @@ function run(machine, input) {
   let memory = input;
   let command = machine.commands[machine.start];
   let stepsLeft = maxSteps;
-  while(command){
+  while(command) {
     command = command(machine.commands, memory);
     if(!stepsLeft--)
       return "bottom";
