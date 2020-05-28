@@ -1,7 +1,6 @@
 #include <vector>
 #include <optional>
 #include <iostream>
-#include <sstream>
 
 // Register value type
 using VAL = unsigned int;
