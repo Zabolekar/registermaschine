@@ -4,6 +4,7 @@
 
 // Register value type
 using VAL = unsigned int;
+using Memory = std::vector<VAL>;
 
 // Machine step count limit. Comment out to disable step count checks
 #define MAX_STEPS 1000
@@ -11,7 +12,7 @@ using VAL = unsigned int;
 // Macro definitions
 
 #define MACHINE(name) \
-   std::optional<std::vector<VAL>> name(std::vector<VAL>&& memory)
+   std::optional<Memory> name(Memory&& memory)
 
 #define GROW_ON_DEMAND(reg) \
    if (reg >= memory.size()) memory.resize(reg+1);
@@ -49,6 +50,27 @@ using VAL = unsigned int;
 #define HALT \
    return memory;
 
+// output helpers
+
+std::ostream& operator<< (std::ostream& stream, const Memory& memory)
+{
+   const size_t last = memory.size() - 1;
+   stream << "[";
+   for (size_t i = 0; i < last; i++)
+      stream << memory[i] << ", ";
+   stream << memory[last] << "]";
+}
+
+std::ostream& operator<< (
+   std::ostream& stream,
+   const std::optional<Memory>& maybe_memory)
+{
+   if (maybe_memory)
+      stream << *maybe_memory;
+   else
+      stream << "Bottom";
+}
+
 // Machine definitions
 
 MACHINE(adder)
@@ -76,28 +98,11 @@ MACHINE(subtractor)
   h: HALT
 }
 
-void print(const std::optional<std::vector<VAL>>& maybe_memory)
-{
-   if (maybe_memory)
-   {
-      const auto& memory = *maybe_memory;
-      const size_t last = memory.size() - 1;
-      std::cout << "[";
-      for (size_t i = 0; i < last; i++)
-         std::cout << memory[i] << ", ";
-      std::cout << memory[last] << "]\n";
-   }
-   else
-   {
-      std::cout << "Bottom\n";
-   }
-}
-
 // Usage example
 
 int main()
 {
-   print(adder({1, 5, 7}));
-   print(subtractor({8, 3, 0}));
-   print(subtractor({3, 8, 0}));
+   std::cout << adder({1, 5, 7}) << std::endl;
+   std::cout << subtractor({8, 3, 0}) << std::endl;
+   std::cout << subtractor({3, 8, 0}) << std::endl;
 }
