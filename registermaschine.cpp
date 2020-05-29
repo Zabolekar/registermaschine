@@ -2,9 +2,7 @@
 #include <optional>
 #include <iostream>
 
-// Register value type
-using VAL = unsigned int;
-using Memory = std::vector<VAL>;
+using Memory = std::vector<unsigned int>;
 
 // Machine step count limit. Comment out to disable step count checks
 #define MAX_STEPS 1000
@@ -59,6 +57,7 @@ std::ostream& operator<< (std::ostream& stream, const Memory& memory)
    for (size_t i = 0; i < last; i++)
       stream << memory[i] << ", ";
    stream << memory[last] << "]";
+   return stream;
 }
 
 std::ostream& operator<< (
@@ -69,6 +68,7 @@ std::ostream& operator<< (
       stream << *maybe_memory;
    else
       stream << "Bottom";
+   return stream;
 }
 
 // Machine definitions
@@ -103,6 +103,6 @@ MACHINE(subtractor)
 int main()
 {
    std::cout << adder({1, 5, 7}) << std::endl;
-   std::cout << subtractor({8, 3, 0}) << std::endl;
-   std::cout << subtractor({3, 8, 0}) << std::endl;
+   std::cout << subtractor({8, 3}) << std::endl;
+   std::cout << subtractor({3, 8}) << std::endl;
 }
