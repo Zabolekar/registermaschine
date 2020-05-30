@@ -61,18 +61,17 @@ namespace Registermaschine
     }
     
     IResult Run(MemoryState input, int? maxSteps = 1000) =>
-      ( // performing a limited or an unlimited number of steps:
-        maxSteps switch
-        {
-          int count => EnumerateSteps(input).Take(count),
-          null => EnumerateSteps(input)
-        }
-      ) // returning the result based on the last step:
-        .Last() switch
-        {
-          (memory: var output, nextCommand: null) => new Success(output),
-          _ => new DoesNotHalt()
-        };
+    {
+      var steps = EnumerateSteps(input);
+      if(maxSteps is int count)
+        steps = steps.Take(count);
+
+      return steps.Last() switch
+      {
+        (memory: var output, nextCommand: null) => new Success(output),
+        _ => new DoesNotHalt()
+      };
+    }
   }
   
   
